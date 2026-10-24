@@ -137,6 +137,11 @@ st.markdown("""
         color: #7e22ce;
         border: 1px solid #f3e8ff;
     }
+    .pill-bd {
+        background-color: #ecfeff;
+        color: #0e7490;
+        border: 1px solid #cffafe;
+    }
     .pill-junior {
         background-color: #f0fdf4;
         color: #15803d;
@@ -304,13 +309,15 @@ with st.sidebar:
     total_count = len(df)
     de_count = len(df[df["hub"] == "Data Engineering"])
     ml_count = len(df[df["hub"] == "Machine Learning"])
+    bd_count = len(df[df["hub"] == "Big Data"])
 
     selected_hub = st.radio(
         "Направление:",
         [
             f"Все направления ({total_count})",
             f"Data Engineering ({de_count})",
-            f"Machine Learning ({ml_count})"
+            f"Machine Learning ({ml_count})",
+            f"Big Data ({bd_count})"
         ],
         index=0
     )
@@ -320,6 +327,8 @@ with st.sidebar:
         clean_hub = "Data Engineering"
     elif "Machine Learning" in selected_hub:
         clean_hub = "Machine Learning"
+    elif "Big Data" in selected_hub:
+        clean_hub = "Big Data"
 
     selected_diff = st.multiselect(
         "Уровень сложности:",
@@ -388,7 +397,7 @@ with col_m1:
     st.metric(
         label="📚 Всего публикаций в DWH",
         value=f"{total_count} статей",
-        delta=f"+{de_count} DE / +{ml_count} ML",
+        delta=f"+{de_count} DE / +{ml_count} ML / +{bd_count} BD",
         help="Количество валидированных и сохраненных материалов в Turso Cloud"
     )
 
@@ -484,7 +493,7 @@ with tab_feed:
                 "pill-senior" if diff in ["Senior", "Lead"] 
                 else ("pill-middle" if diff == "Middle" else "pill-junior")
             )
-            hub_pill_class = "pill-ml" if row["hub"] == "Machine Learning" else "pill-de"
+            hub_pill_class = "pill-ml" if row["hub"] == "Machine Learning" else ("pill-bd" if row["hub"] == "Big Data" else "pill-de")
 
             tags_html = "".join([f'<span class="tech-tag">#{t}</span>' for t in row["tech_list"]])
 
