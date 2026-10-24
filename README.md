@@ -1,92 +1,146 @@
-# 🧠 Habr Data & ML Intelligence Platform (with DevSecOps)
+# 🧠 Habr Data & ML Engineering Radar (with DevSecOps)
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Security: Bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
+[![Security: Bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
+[![SCA: pip--audit](https://img.shields.io/badge/dependencies-pip--audit%20clean-green.svg)](https://github.com/pypa/pip-audit)
+[![DWH: Turso Cloud](https://img.shields.io/badge/database-Turso%20libSQL-blueviolet.svg)](https://turso.tech/)
+[![OLAP: DuckDB](https://img.shields.io/badge/OLAP-DuckDB%20Fast-yellow.svg)](https://duckdb.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Автоматизированная платформа и serverless ELT-пайплайн для мониторинга, семантического анализа и агрегации технических публикаций с Хабра по направлениям **Data Engineering** и **Machine Learning**.
+Автономная промышленная платформа и serverless ELT-пайплайн для непрерывного мониторинга, семантической фильтрации через LLM и аналитической агрегации технических публикаций с Хабра по ключевым направлениям: **Data Engineering**, **Machine Learning** и **Big Data**.
 
-Проект разработан с соблюдением принципов разделения вычислений и хранилища (**Separation of Compute and Storage**) и встроенным контуром безопасности (**DevSecOps**) с нулевой стоимостью инфраструктуры ($0 Cloud Architecture).
+Проект спроектирован по принципам современного стека данных (**Modern Data Stack**), разделения вычислений и хранения (**Separation of Compute & Storage**), а также всестороннего контура безопасности (**DevSecOps**) с пожизненной нулевой стоимостью инфраструктуры (**$0.00 TCO**).
 
 ---
 
-## 🏗 Архитектура системы
+## 🏗 Архитектура системы (End-to-End Pipeline)
 
 ```mermaid
 flowchart TD
-    subgraph Ingestion ["Сбор данных и AI-Кураторство"]
-        A["Habr RSS Feeds (DE & ML)"] --> B["GitHub Actions Runner"]
-        B --> C["Groq API (Qwen 27B)"]
+    subgraph Ingestion ["1. Data Ingestion & AI Curation"]
+        A["📡 Habr RSS Feeds\n(DE, ML, Big Data)"] --> B["⚙️ GitHub Actions Runner\n(Ubuntu Cloud VM)"]
+        B --> C["🤖 Groq LPU API\n(Qwen 27B Tech Lead)"]
     end
 
-    subgraph Security ["DevSecOps Security Gate"]
-        B --> S1["Bandit (SAST Security Scan)"]
-        B --> S2["pip-audit (CVE Vulnerability Audit)"]
-        C --> S3["Prompt Injection Defense"]
+    subgraph Security ["2. DevSecOps Security Gates"]
+        B --> S1["🛡️ Bandit SAST\n(AST Code Analysis)"]
+        B --> S2["📦 pip-audit SCA\n(PyPI CVE Vulnerabilities)"]
+        C --> S3["🔒 Prompt Injection Defense\n(XML Isolation Tags)"]
     end
 
-    subgraph Storage ["Хранилище и Контракты"]
-        C --> D["Pydantic Data Contracts"]
-        D -->|OLTP| E["Turso Cloud Database (libSQL / SQLite)"]
+    subgraph Contracts ["3. Data Contracts & Storage (DWH)"]
+        C --> D["📋 Pydantic v2 Validation\n(Tech, Difficulty, Prod Verdict)"]
+        D -->|HTTPS Hrana| E["☁️ Turso Cloud DWH\n(libSQL / AWS Stockholm)"]
+        E -.->|Local Fallback| E2["💾 SQLite (articles.db)"]
     end
 
-    subgraph Serving ["Доставка и Аналитика"]
-        D -->|Bot Delivery| F["Telegram Bot (Дайджест с хэштегами)"]
-        E -->|OLAP Engine| G["DuckDB (In-Memory Processing)"]
-        G --> H["Streamlit Web Dashboard"]
-        G --> I["Apache Parquet Export"]
+    subgraph Serving ["4. Serving, Analytics & Delivery"]
+        D -->|Instant Alerts| F["📲 Telegram Bot\n(Inline Buttons & Badges)"]
+        E -->|Sunday Automation| F2["📊 Sunday Tech Digest\n(Weekly Trends & Best Article)"]
+        E -->|Vectorized OLAP| G["⚡ DuckDB In-Memory Engine"]
+        G --> H["🌐 Streamlit BI Dashboard\n(3 Tabs, Data Observability)"]
+        G --> I["📦 Data Lake Export\n(Apache Parquet & CSV)"]
     end
 ```
 
 ---
 
+## ⚡ Ключевые возможности платформы
+
+### 🤖 1. AI-Техлид и семантическая фильтрация (Groq LPU)
+* **Анти-кликбейт и фильтрация «воды»:** нейросеть `qwen/qwen3.8-27b` отбирает **максимум по 1 лучшей практической публикации** из каждого хаба за один запуск.
+* **Строгий контракт данных (Data Contract):** извлечение метаданных валидируется через **Pydantic v2**:
+  * Оценка грейда сложности: `Junior`, `Middle`, `Senior`, `Lead`.
+  * Тип публикации: `Архитектура`, `Кейс`, `Гайд`, `Обзор`, `Анализ`.
+  * Примерное время чтения (`read_time`): например, `~6 мин`.
+  * Индекс применимости к продакшену (`prod_verdict`): `🟢 Готово к проду`, `🟡 Эксперимент`, `🔴 Только пет-проект`.
+  * Список извлечённых сущностей стека (`tech_stack`).
+
+### 📲 2. Telegram Delivery с Inline-кнопками и Воскресным дайджестом
+* **Интерактивные кнопки (Inline Keyboards):** быстрое открытие оригиналов статей прямо под постом в один клик.
+* **Мульти-рассылка:** поддержка списка получателей через запятую (`TELEGRAM_CHAT_ID`).
+* **Воскресный аналитический дайджест (Sunday Digest):** каждое воскресенье бот автоматически выгружает срез за неделю и рассылает:
+  * 🥇🥈🥉 Топ-3 технологии недели по данным DWH.
+  * 🏆 Архитектурную статью недели с ключевым инсайтом.
+  * Идемпотентность гарантируется отдельной таблицей `digests` в базе данных.
+
+### 📊 3. Аналитический веб-дашборд (Streamlit + DuckDB)
+* **In-Memory OLAP:** агрегации по 80+ статьям и тысячам тегов рассчитываются за доли миллисекунд движком **DuckDB** с использованием функции `unnest()`.
+* **Data Observability & Качество данных (Data Quality):**
+  * ⏱ **Data Freshness (SLA):** таймер свежести данных с момента последней записи в DWH.
+  * 🧩 **Tech Stack Completeness:** процент полноты разметки технологий.
+  * 📝 **Contract Completeness:** процент валидации выжимок.
+  * 🔒 **Primary Key Integrity:** 100% уникальность ссылок без дубликатов.
+* **Data Lake Export:** генерация сжатого бинарного файла **Apache Parquet** (`pyarrow`) и CSV на лету.
+
+---
+
 ## 🛡 Контур безопасности (DevSecOps)
 
-В проекте реализован 4-уровневый контур безопасности без использования платных инструментов:
-1. **AppSec:**
-   * **Prompt Injection Defense:** фильтрация мета-команд в текстах статей.
-   * **SQL Injection Prevention:** 100% параметризованные SQL-запросы в Turso и DuckDB.
-   * **XSS / HTML Sanitization:** экранирование спецсимволов перед отправкой в Telegram API.
+В проекте реализован многоуровневый контур безопасности корпоративного класса:
+
+1. **Защита от Prompt Injection (OWASP LLM Top 10):**
+   * Весь входящий контент статей изолирован в XML-теги `<article_content>` с явной системной директивой игнорирования любых внутренних мета-инструкций.
 2. **SAST (Static Application Security Testing):**
-   * Анализ исходного кода через **Bandit** на уязвимости, небезопасные вызовы и утечки.
+   * Анализ исходного кода на каждом CI/CD прогоне через **Bandit** (`-ll -ii`): 0 уязвимостей на 900+ строк кода.
 3. **SCA (Software Composition Analysis):**
-   * Аудит зависимостей через **pip-audit** по мировой базе уязвимостей CVE.
-4. **Least Privilege (Принцип наименьших привилегий):**
-   * Виртуальные машины GitHub Actions работают с правами `contents: read` без доступа к изменению репозитория.
+   * Автоматический аудит проектных зависимостей по базе CVE через **pip-audit**.
+4. **AppSec & Network Hardening:**
+   * Белый список официальных доменов (`https://habr.com/`) для защиты от SSRF.
+   * Экранирование спецсимволов (`html.escape`) перед отправкой в Telegram API.
+   * Глобальные таймауты сокетов (`socket.setdefaulttimeout(15)`) против зависания раннеров.
+   * Безопасное освобождение соединений БД в блоках `try...finally: client.close()`.
+5. **Least Privilege (Наименьшие привилегии):**
+   * Раннеры GitHub Actions работают со строгими правами `contents: read`. Секреты хранятся в зашифрованных GitHub Secrets.
 
 ---
 
-## 🛠 Технологический стек
+## 💰 Расчёт затрат и лимитов ($0.00 Budget)
 
-* **Оркестрация:** GitHub Actions (расписание: 09:00, 13:00, 18:00, 22:00 МСК).
-* **AI & NER:** **Groq Cloud API** (`qwen/qwen3.8-27b`) — фильтрация шума, извлечение стека технологий и уровня сложности.
-* **Качество данных (Data Quality):** **Pydantic v2** — валидация контрактов данных.
-* **Облачное хранилище (DWH):** **Turso** (Serverless libSQL) в защищённом регионе Стокгольм.
-* **Аналитический движок (OLAP):** **DuckDB** — векторные вычисления и агрегация тегов через функцию `unnest()`.
-* **Визуализация (BI):** **Streamlit** — реактивный веб-дашборд с фильтрами по стеку.
-* **Формат данных:** **Apache Parquet** (`pyarrow`) — генерация аналитического файла на лету.
+| Сервис | Роль в системе | Бесплатный лимит | Реальный расход | Статус |
+| :--- | :--- | :--- | :--- | :---: |
+| **GitHub Actions** | Оркестрация (4x/день) | 2 000 минут/мес | ~73 мин/мес (3.6%) | 🟢 $0.00 |
+| **Groq Cloud** | LPU inference (Qwen 27B) | 14 400 запросов/день | ~10-12 запросов/день (0.08%) | 🟢 $0.00 |
+| **Turso Cloud** | Serverless libSQL DWH | 9 ГБ / 25 млн записей | ~160 КБ / ~250 записей | 🟢 $0.00 |
+| **Streamlit Cloud**| Хостинг дашборда | 1 ГБ RAM, 24/7 | ~115 МБ RAM | 🟢 $0.00 |
+| **Telegram API** | Доставка уведомлений | Без ограничений | 2-3 сообщения/день | 🟢 $0.00 |
+| **Sentry** | APM и мониторинг ошибок | 5 000 событий/мес | 0-1 событий/мес | 🟢 $0.00 |
+
+*Банковские карты нигде не привязаны. Списание средств физически невозможно.*
 
 ---
 
-## 🚀 Быстрый старт
+## 🚀 Локальный запуск
 
-1. Клонируйте репозиторий:
+1. **Клонируйте репозиторий:**
    ```bash
-   git clone https://github.com/your-username/habr-bot.git
+   git clone https://github.com/K0ldan/habr-bot.git
    cd habr-bot
    ```
 
-2. Установите зависимости:
+2. **Установите зависимости:**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Запуск пайплайна:
+3. **Настройте переменные окружения:**
+   Скопируйте шаблон `.env.example` в `.env` и заполните свои ключи:
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Запуск ELT-пайплайна:**
    ```bash
    python main.py
    ```
 
-4. Запуск аналитического дашборда:
+5. **Запуск аналитического дашборда:**
    ```bash
    streamlit run dashboard.py
    ```
+
+---
+
+## 📄 Лицензия
+Проект распространяется под открытой лицензией [MIT](LICENSE).
+Автор: [@K0ldan](https://github.com/K0ldan)

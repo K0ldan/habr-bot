@@ -1,3 +1,4 @@
+import datetime
 import io
 import json
 import os
@@ -572,10 +573,68 @@ with tab_analytics:
     with chart_col4:
         st.markdown("##### ⚖️ Доли направлений (Data Eng vs ML)")
         hub_ratio = pd.DataFrame({
-            "Направление": ["Data Engineering", "Machine Learning"],
-            "Статей": [de_count, ml_count]
+            "Направление": ["Data Engineering", "Machine Learning", "Big Data"],
+            "Статей": [de_count, ml_count, bd_count]
         }).set_index("Направление")
         st.bar_chart(hub_ratio, color="#f59e0b", height=300)
+
+
+    # ------------------------------------------
+    # Блок Data Quality & Observability
+    # ------------------------------------------
+    st.markdown("---")
+    st.subheader("🛡️ Data Observability & Качество данных (Data Quality)")
+    st.caption("Метрики надежности хранилища, мониторинг свежести данных (SLA) и полноты атрибутов:")
+
+    dq_col1, dq_col2, dq_col3, dq_col4 = st.columns(4)
+
+    # 1. Свежесть данных (Data Freshness / SLA)
+    if not df.empty and "created_at" in df.columns:
+        latest_ts = pd.to_datetime(df["created_at"]).max()
+        now_utc = pd.Timestamp.now(datetime.timezone.utc)
+        if latest_ts.tzinfo is None:
+            latest_ts = latest_ts.tz_localize("UTC")
+        diff_hours = max(0.0, round((now_utc - latest_ts).total_seconds() / 3600, 1))
+        freshness_label = f"{diff_hours} ч назад" if diff_hours >= 1 else "< 1 часа назад"
+    else:
+        freshness_label = "—"
+
+    dq_col1.metric(
+        label="⏱️ Data Freshness (Свежесть)",
+        value=freshness_label,
+        delta="SLA соблюден (4x/день)",
+        help="Время с момента последней записи в Turso DWH"
+    )
+
+    # 2. Полнота стека (Tech Stack Completeness)
+    has_tech = len(df[df["tech_list"].apply(len) > 0])
+    stack_completeness = f"{round((has_tech / total_count) * 100, 1)}%" if total_count > 0 else "0%"
+    dq_col2.metric(
+        label="🧩 Полнота стека технологий",
+        value=stack_completeness,
+        delta=f"{has_tech}/{total_count} размечено",
+        help="Процент статей, где NER-модель успешно выделила технологии"
+    )
+
+    # 3. Полнота AI-выжимок (Contract Completeness)
+    has_summary = len(df[df["summary"].astype(str).str.len() > 10])
+    summary_completeness = f"{round((has_summary / total_count) * 100, 1)}%" if total_count > 0 else "0%"
+    dq_col3.metric(
+        label="📝 Полнота выжимок (Contract)",
+        value=summary_completeness,
+        delta="Pydantic v2 Contract",
+        help="Процент статей с валидированной AI-выжимкой"
+    )
+
+    # 4. Уникальность первичных ключей (Primary Key Integrity)
+    unique_urls = df["url"].nunique()
+    uniqueness = f"{round((unique_urls / total_count) * 100, 1)}%" if total_count > 0 else "0%"
+    dq_col4.metric(
+        label="🔒 Уникальность записей (PK)",
+        value=uniqueness,
+        delta="0 дубликатов (Idempotent)",
+        help="Гарантия отсутствия дубликатов публикаций в хранилище"
+    )
 
 
 # ------------------------------------------

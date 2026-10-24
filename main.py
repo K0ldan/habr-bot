@@ -65,6 +65,8 @@ class EnrichedArticle(BaseModel):
     tech_stack: List[str] = Field(default_factory=list, description="Список упомянутых технологий")
     difficulty: str = Field(default="Middle", description="Junior, Middle, Senior, Lead")
     article_type: str = Field(default="Кейс", description="Архитектура, Гайд, Кейс, Обзор, Анализ")
+    read_time: str = Field(default="~5 мин", description="Время чтения оригинала, например: ~5 мин")
+    prod_verdict: str = Field(default="🟡 Эксперимент", description="🟢 Готово к проду / 🟡 Эксперимент / 🔴 Только пет-проект")
 
 
 def is_safe_habr_url(url: str) -> bool:
@@ -276,13 +278,17 @@ def extract_structured_data(title: str, description: str) -> EnrichedArticle:
 2. "tech_stack": массив из 2-5 ключевых технологий (например, ["Kafka", "ClickHouse", "Spark"]).
 3. "difficulty": "Junior", "Middle", "Senior" или "Lead".
 4. "article_type": "Архитектура", "Гайд", "Кейс", "Обзор" или "Анализ".
+5. "read_time": примерное время чтения статьи (например: "~4 мин", "~7 мин", "~12 мин").
+6. "prod_verdict": готовность к продакшену ("🟢 Готово к проду", "🟡 Эксперимент", "🔴 Только пет-проект").
 
 Ответь СТРОГО в формате JSON без кавычек ```:
 {{
   "summary": "🎯 <b>Суть:</b> кратко суть\\n💡 <b>Главный инсайт:</b> практический вывод",
   "tech_stack": ["Технология1", "Технология2"],
   "difficulty": "Junior" / "Middle" / "Senior" / "Lead",
-  "article_type": "Архитектура" / "Гайд" / "Кейс" / "Обзор"
+  "article_type": "Архитектура" / "Гайд" / "Кейс" / "Обзор",
+  "read_time": "~6 мин",
+  "prod_verdict": "🟢 Готово к проду" / "🟡 Эксперимент" / "🔴 Только пет-проект"
 }}
 """
         }
@@ -329,7 +335,8 @@ def send_telegram(chat_id: str, title: str, url: str, enriched: EnrichedArticle)
 
     message_text = (
         f"🔥 <b>Новая статья:</b> <a href='{url}'>{safe_title}</a>\n\n"
-        f"🏷 <b>Уровень:</b> <code>{difficulty_badge}</code> | 📑 <b>Тип:</b> <code>{enriched.article_type}</code>\n\n"
+        f"🏷 <b>Уровень:</b> <code>{difficulty_badge}</code> | 📑 <b>Тип:</b> <code>{enriched.article_type}</code>\n"
+        f"⏱ <b>Чтение:</b> <code>{enriched.read_time}</code> | 🎯 <b>Прод:</b> <code>{enriched.prod_verdict}</code>\n\n"
         f"{enriched.summary}\n\n"
         f"🛠 <b>Стек:</b> {hashtags}"
     )
