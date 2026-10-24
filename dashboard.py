@@ -216,7 +216,7 @@ def load_data():
         target_url = TURSO_DATABASE_URL.replace("libsql://", "https://") if TURSO_DATABASE_URL.startswith("libsql://") else TURSO_DATABASE_URL
         client = libsql_client.create_client_sync(url=target_url, auth_token=TURSO_AUTH_TOKEN)
         try:
-            res = client.execute("SELECT url, title, hub, difficulty, article_type, tech_stack, summary, created_at FROM articles ORDER BY created_at DESC")
+            res = client.execute("SELECT url, title, hub, difficulty, article_type, tech_stack, summary, created_at FROM articles WHERE summary IS NOT NULL AND length(summary) > 5 ORDER BY created_at DESC")
             columns = ["url", "title", "hub", "difficulty", "article_type", "tech_stack", "summary", "created_at"]
             data = [list(row) for row in res.rows]
             df = pd.DataFrame(data, columns=columns)
@@ -225,7 +225,7 @@ def load_data():
     elif os.path.exists("articles.db"):
         import sqlite3
         conn = sqlite3.connect("articles.db")
-        df = pd.read_sql("SELECT * FROM articles ORDER BY created_at DESC", conn)
+        df = pd.read_sql("SELECT * FROM articles WHERE summary IS NOT NULL AND length(summary) > 5 ORDER BY created_at DESC", conn)
         conn.close()
     else:
         df = pd.DataFrame(columns=["url", "title", "hub", "difficulty", "article_type", "tech_stack", "summary", "created_at"])
@@ -496,35 +496,40 @@ with tab_feed:
             )
             hub_pill_class = "pill-ml" if row["hub"] == "Machine Learning" else ("pill-bd" if row["hub"] == "Big Data" else "pill-de")
 
-            tags_html = "".join([f'<span class="tech-tag">#{t}</span>' for t in row["tech_list"]])
+            with st.container(border=True):
+                # Бейджи категории, сложности и формата
+                st.markdown(
+                    f'<div style="margin-bottom: 6px;">'
+                    f'<span class="pill {hub_pill_class}">{row["hub"]}</span>'
+                    f'<span class="pill {diff_pill_class}">{diff}</span>'
+                    f'<span class="pill pill-format">Формат: {row["article_type"]}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
 
-            summary_content = row["summary"] if row["summary"] else "Краткое описание отсутствует."
+                # Заголовок статьи со ссылкой
+                st.markdown(f"#### [{row['title']}]({row['url']})")
 
-            st.markdown(f"""
-            <div class="article-card">
-                <div>
-                    <span class="pill {hub_pill_class}">{row['hub']}</span>
-                    <span class="pill {diff_pill_class}">{diff}</span>
-                    <span class="pill pill-format">Формат: {row['article_type']}</span>
-                </div>
-                <a class="article-title-link" href="{row['url']}" target="_blank">
-                    {row['title']} ↗
-                </a>
-                <div class="ai-summary-box">
-                    <b>💡 AI Выжимка & Ключевые инсайты:</b><br>
-                    {summary_content}
-                </div>
-                <div style="margin-top: 10px;">
-                    <span style="font-size: 12px; font-weight: 600; color: #64748b; margin-right: 6px;">Стек:</span>
-                    {tags_html}
-                </div>
-                <div style="margin-top: 14px; text-align: right;">
-                    <a href="{row['url']}" target="_blank" style="font-size: 13px; font-weight: 600; color: #2563eb; text-decoration: none;">
-                        Читать оригинал на Хабре →
-                    </a>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+                # AI Выжимка
+                st.markdown(
+                    f'<div class="ai-summary-box">'
+                    f'<b>💡 AI Выжимка & Ключевые инсайты:</b><br>{row["summary"]}'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+
+                # Стек технологий
+                if row["tech_list"]:
+                    tags_html = "".join([f'<span class="tech-tag">#{t}</span>' for t in row["tech_list"]])
+                    st.markdown(
+                        f'<div style="margin: 8px 0 12px 0;">'
+                        f'<span style="font-size: 12px; font-weight: 600; color: #64748b; margin-right: 6px;">Стек:</span>{tags_html}'
+                        f'</div>',
+                        unsafe_allow_html=True
+                    )
+
+                # Кнопка перехода к оригиналу
+                st.link_button("📖 Читать статью на Хабре ↗", row["url"], use_container_width=True)
 
 
 # ------------------------------------------
@@ -580,64 +585,6 @@ with tab_analytics:
 
 
     # ------------------------------------------
-    # Блок Data Quality & Observability
-    # ------------------------------------------
-    st.markdown("---")
-    st.subheader("🛡️ Data Observability & Качество данных (Data Quality)")
-    st.caption("Метрики надежности хранилища, мониторинг свежести данных (SLA) и полноты атрибутов:")
-
-    dq_col1, dq_col2, dq_col3, dq_col4 = st.columns(4)
-
-    # 1. Свежесть данных (Data Freshness / SLA)
-    if not df.empty and "created_at" in df.columns:
-        latest_ts = pd.to_datetime(df["created_at"]).max()
-        now_utc = pd.Timestamp.now(datetime.timezone.utc)
-        if latest_ts.tzinfo is None:
-            latest_ts = latest_ts.tz_localize("UTC")
-        diff_hours = max(0.0, round((now_utc - latest_ts).total_seconds() / 3600, 1))
-        freshness_label = f"{diff_hours} ч назад" if diff_hours >= 1 else "< 1 часа назад"
-    else:
-        freshness_label = "—"
-
-    dq_col1.metric(
-        label="⏱️ Data Freshness (Свежесть)",
-        value=freshness_label,
-        delta="SLA соблюден (4x/день)",
-        help="Время с момента последней записи в Turso DWH"
-    )
-
-    # 2. Полнота стека (Tech Stack Completeness)
-    has_tech = len(df[df["tech_list"].apply(len) > 0])
-    stack_completeness = f"{round((has_tech / total_count) * 100, 1)}%" if total_count > 0 else "0%"
-    dq_col2.metric(
-        label="🧩 Полнота стека технологий",
-        value=stack_completeness,
-        delta=f"{has_tech}/{total_count} размечено",
-        help="Процент статей, где NER-модель успешно выделила технологии"
-    )
-
-    # 3. Полнота AI-выжимок (Contract Completeness)
-    has_summary = len(df[df["summary"].astype(str).str.len() > 10])
-    summary_completeness = f"{round((has_summary / total_count) * 100, 1)}%" if total_count > 0 else "0%"
-    dq_col3.metric(
-        label="📝 Полнота выжимок (Contract)",
-        value=summary_completeness,
-        delta="Pydantic v2 Contract",
-        help="Процент статей с валидированной AI-выжимкой"
-    )
-
-    # 4. Уникальность первичных ключей (Primary Key Integrity)
-    unique_urls = df["url"].nunique()
-    uniqueness = f"{round((unique_urls / total_count) * 100, 1)}%" if total_count > 0 else "0%"
-    dq_col4.metric(
-        label="🔒 Уникальность записей (PK)",
-        value=uniqueness,
-        delta="0 дубликатов (Idempotent)",
-        help="Гарантия отсутствия дубликатов публикаций в хранилище"
-    )
-
-
-# ------------------------------------------
 # ВКЛАДКА 3: Экспорт в Data Lake (Parquet)
 # ------------------------------------------
 with tab_export:
