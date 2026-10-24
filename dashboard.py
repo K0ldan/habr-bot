@@ -241,6 +241,7 @@ def load_data():
             return []
 
     df["tech_list"] = df["tech_stack"].apply(parse_stack)
+    df["is_ai_pick"] = df["summary"].astype(str).str.contains("🎯 <b>Суть:</b>", na=False)
     df["difficulty"] = df["difficulty"].fillna("Middle").replace({"Unknown": "Middle", "": "Middle"})
     df["article_type"] = df["article_type"].fillna("Кейс").replace({"Article": "Кейс", "": "Кейс"})
     return df
@@ -447,8 +448,31 @@ tab_feed, tab_analytics, tab_export = st.tabs([
 # ВКЛАДКА 1: Умная лента статей
 # ------------------------------------------
 with tab_feed:
+    ai_picks_count = len(df[df["is_ai_pick"]])
+    total_articles = len(df)
+
+    # Двухуровневый переключатель: Выбор AI vs Все публикации
+    feed_mode_col1, feed_mode_col2 = st.columns([3, 2])
+    with feed_mode_col1:
+        feed_mode = st.radio(
+            "Режим показа:",
+            [f"⭐ Выбор AI ({ai_picks_count})", f"📚 Все публикации ({total_articles})"],
+            horizontal=True,
+            index=1,
+            label_visibility="collapsed"
+        )
+    with feed_mode_col2:
+        sort_mode = st.selectbox(
+            "Сортировка:",
+            ["Сначала новые", "Сначала Senior", "По алфавиту"],
+            label_visibility="collapsed"
+        )
+
     # Фильтрация
     filtered_df = df.copy()
+
+    if "Выбор AI" in feed_mode:
+        filtered_df = filtered_df[filtered_df["is_ai_pick"]]
 
     if clean_hub != "Все направления":
         filtered_df = filtered_df[filtered_df["hub"] == clean_hub]
@@ -467,16 +491,7 @@ with tab_feed:
             filtered_df["tech_list"].apply(lambda tags: any(query in t.lower() for t in tags))
         ]
 
-    # Панель сортировки и счетчик
-    feed_header_col1, feed_header_col2 = st.columns([3, 1])
-    with feed_header_col1:
-        st.markdown(f"#### Отобрано материалов: **{len(filtered_df)}** из {total_count}")
-    with feed_header_col2:
-        sort_mode = st.selectbox(
-            "Сортировка:",
-            ["Сначала новые", "Сначала Senior", "По алфавиту"],
-            label_visibility="collapsed"
-        )
+    st.caption(f"Показано материалов: **{len(filtered_df)}** из {total_articles}")
 
     if sort_mode == "Сначала Senior":
         diff_order = {"Lead": 4, "Senior": 3, "Middle": 2, "Junior": 1}
@@ -497,28 +512,34 @@ with tab_feed:
             hub_pill_class = "pill-ml" if row["hub"] == "Machine Learning" else ("pill-bd" if row["hub"] == "Big Data" else "pill-de")
 
             with st.container(border=True):
-                # Бейджи категории, сложности и формата
-                st.markdown(
-                    f'<div style="margin-bottom: 6px;">'
-                    f'<span class="pill {hub_pill_class}">{row["hub"]}</span>'
-                    f'<span class="pill {diff_pill_class}">{diff}</span>'
-                    f'<span class="pill pill-format">Формат: {row["article_type"]}</span>'
-                    f'</div>',
-                    unsafe_allow_html=True
-                )
+                is_ai = row.get("is_ai_pick", False)
+                if is_ai:
+                    badge_header = (
+                        f'<span class="pill" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; border: 1px solid #f59e0b;">⭐ ВЫБОР AI</span>'
+                        f'<span class="pill {hub_pill_class}">{row["hub"]}</span>'
+                        f'<span class="pill {diff_pill_class}">{diff}</span>'
+                        f'<span class="pill pill-format">Формат: {row["article_type"]}</span>'
+                    )
+                    content_box = (
+                        f'<div class="ai-summary-box">'
+                        f'{row["summary"]}'
+                        f'</div>'
+                    )
+                else:
+                    badge_header = (
+                        f'<span class="pill" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">📰 ХАБР</span>'
+                        f'<span class="pill {hub_pill_class}">{row["hub"]}</span>'
+                    )
+                    content_box = (
+                        f'<div style="background: #f8fafc; border-left: 3px solid #94a3b8; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0; font-size: 14px; line-height: 1.5; color: #334155;">'
+                        f'<b>📄 Аннотация:</b><br>{row["summary"]}'
+                        f'</div>'
+                    )
 
-                # Заголовок статьи со ссылкой
+                st.markdown(f'<div style="margin-bottom: 6px;">{badge_header}</div>', unsafe_allow_html=True)
                 st.markdown(f"#### [{row['title']}]({row['url']})")
+                st.markdown(content_box, unsafe_allow_html=True)
 
-                # AI Выжимка
-                st.markdown(
-                    f'<div class="ai-summary-box">'
-                    f'<b>💡 AI Выжимка & Ключевые инсайты:</b><br>{row["summary"]}'
-                    f'</div>',
-                    unsafe_allow_html=True
-                )
-
-                # Стек технологий
                 if row["tech_list"]:
                     tags_html = "".join([f'<span class="tech-tag">#{t}</span>' for t in row["tech_list"]])
                     st.markdown(
@@ -528,7 +549,6 @@ with tab_feed:
                         unsafe_allow_html=True
                     )
 
-                # Кнопка перехода к оригиналу
                 st.link_button("📖 Читать статью на Хабре ↗", row["url"], use_container_width=True)
 
 

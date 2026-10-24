@@ -73,6 +73,29 @@ def is_safe_habr_url(url: str) -> bool:
     """DevSec: Проверяет, что ссылка ведет строго на официальный домен Хабра (защита от фишинга и SSRF)"""
     return bool(url and url.startswith("https://habr.com/"))
 
+LOCAL_TECH_KEYWORDS = [
+    'Python', 'SQL', 'Kafka', 'ClickHouse', 'Spark', 'Hadoop', 'PyTorch', 'TensorFlow', 
+    'Airflow', 'Docker', 'Kubernetes', 'PostgreSQL', 'Postgres', 'MySQL', 'MongoDB', 
+    'Redis', 'DuckDB', 'dbt', 'Snowflake', 'BigQuery', 'Redshift', 'Data Lakehouse', 'Data Lake', 
+    'ETL', 'ELT', 'LLM', 'RAG', 'LangChain', 'Llama', 'Ollama', 'FastAPI', 'Pandas', 
+    'Polars', 'NLP', 'Computer Vision', 'CUDA', 'GPU', 'Rust', 'Go', 'Scala', 'Java', 
+    'OpenAI', 'ChatGPT', 'Groq', 'Mistral', 'Qwen', 'DeepSeek', 'Claude', 'Databricks', 
+    'Trino', 'Flink', 'RabbitMQ', 'Grafana', 'Prometheus', 'S3', 'AWS', 'GCP', 'Azure',
+    'Scikit-learn', 'BERT', 'Transformers', 'KubeFlow', 'MLflow', 'DVC', 'Vector DB',
+    'Chroma', 'Qdrant', 'Milvus', 'Tableau', 'Power BI', 'Superset', 'Iceberg', 'Delta Lake'
+]
+_tech_regex = re.compile(r'\b(' + '|'.join([re.escape(k) for k in LOCAL_TECH_KEYWORDS]) + r')\b', re.IGNORECASE)
+
+def detect_tech_keywords_local(text: str) -> List[str]:
+    matches = set()
+    for m in _tech_regex.finditer(text):
+        word = m.group().lower()
+        for k in LOCAL_TECH_KEYWORDS:
+            if word == k.lower():
+                matches.add(k)
+                break
+    return sorted(list(matches))[:5]
+
 
 # ==========================================
 # 2. Database Adapter (Turso Cloud + SQLite fallback)
@@ -146,11 +169,17 @@ class Database:
             cursor.execute("SELECT 1 FROM articles WHERE url = ?", (url,))
             return cursor.fetchone() is not None
 
-    def save_article(self, url: str, title: str, hub: str, enriched: Optional[EnrichedArticle] = None):
+    def save_article(self, url: str, title: str, hub: str, enriched: Optional[EnrichedArticle] = None, candidate_desc: str = ""):
         diff = enriched.difficulty if enriched else "Unknown"
         a_type = enriched.article_type if enriched else "Article"
-        stack_json = json.dumps(enriched.tech_stack if enriched else [], ensure_ascii=False)
-        summ = enriched.summary if enriched else ""
+        
+        if enriched:
+            stack_json = json.dumps(enriched.tech_stack, ensure_ascii=False)
+            summ = enriched.summary
+        else:
+            local_tags = detect_tech_keywords_local(f"{title} {candidate_desc}")
+            stack_json = json.dumps(local_tags, ensure_ascii=False)
+            summ = candidate_desc if candidate_desc else "Публикация сообщества Хабра."
 
         if self.is_turso:
             self.client.execute("""
@@ -514,10 +543,12 @@ def main():
             # Сохраняем выбранную статью в облачную базу с метаданными
             db.save_article(best_entry.link, best_entry.title, feed_title, enriched)
 
-            # Остальные кандидаты архивируем в базе, чтобы не дублировать
+            # Остальные кандидаты архивируем в базе с авторским описанием и локальными тегами (0 токенов Groq)
             for entry in unseen_in_feed:
                 if entry.link != best_entry.link:
-                    db.save_article(entry.link, entry.title, feed_title, None)
+                    cand_desc = re.sub(r'<[^>]+>', ' ', getattr(entry, 'summary', '')).strip()
+                    cand_desc = ' '.join(cand_desc.split())[:400]
+                    db.save_article(entry.link, entry.title, feed_title, None, candidate_desc=cand_desc)
 
             time.sleep(2)
 
