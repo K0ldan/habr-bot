@@ -426,10 +426,9 @@ st.markdown("###")
 # ==========================================
 # 7. Вкладки приложения
 # ==========================================
-tab_feed, tab_analytics, tab_sql, tab_export = st.tabs([
+tab_feed, tab_analytics, tab_export = st.tabs([
     "📑 Умная лента выжимок", 
     "📊 Аналитика & Тренды", 
-    "⚡ DuckDB SQL Sandbox",
     "📦 Data Lake & Экспорт"
 ])
 
@@ -571,91 +570,7 @@ with tab_analytics:
 
 
 # ------------------------------------------
-# ВКЛАДКА 3: Интерактивный DuckDB SQL Sandbox
-# ------------------------------------------
-with tab_sql:
-    st.subheader("⚡ Интерактивный DuckDB SQL Sandbox")
-    st.markdown("""
-    Здесь вы можете выполнять **любые аналитические SQL-запросы** напрямую к таблице `articles` прямо в браузере.
-    Движок **DuckDB** выполняет запросы к колоночным данным в оперативной памяти за доли миллисекунд.
-    """)
-
-    # Предустановленные шаблоны SQL
-    preset_query = st.selectbox(
-        "Выберите готовый аналитический SQL-шаблон или напишите свой:",
-        [
-            "1. Топ-10 технологий с подсчетом статей",
-            "2. Все статьи уровня Senior по Data Engineering",
-            "3. Распределение по форматам публикаций",
-            "4. Поиск статей с упоминанием Kafka или Spark",
-            "5. Произвольный запрос (SELECT * FROM articles LIMIT 5)"
-        ]
-    )
-
-    query_templates = {
-        "1. Топ-10 технологий с подсчетом статей": """SELECT 
-    unnest(tech_list) AS technology, 
-    count(*) AS total_articles
-FROM articles
-WHERE length(tech_stack) > 2
-GROUP BY 1
-ORDER BY 2 DESC
-LIMIT 10;""",
-
-        "2. Все статьи уровня Senior по Data Engineering": """SELECT 
-    title, 
-    article_type, 
-    url 
-FROM articles
-WHERE hub = 'Data Engineering' AND difficulty IN ('Senior', 'Lead')
-ORDER BY created_at DESC;""",
-
-        "3. Распределение по форматам публикаций": """SELECT 
-    hub, 
-    article_type, 
-    count(*) AS count
-FROM articles
-GROUP BY 1, 2
-ORDER BY 1, 3 DESC;""",
-
-        "4. Поиск статей с упоминанием Kafka или Spark": """SELECT 
-    title, 
-    hub, 
-    difficulty, 
-    tech_stack
-FROM articles
-WHERE lower(title) LIKE '%kafka%' 
-   OR lower(title) LIKE '%spark%'
-   OR lower(tech_stack) LIKE '%kafka%'
-   OR lower(tech_stack) LIKE '%spark%';""",
-
-        "5. Произвольный запрос (SELECT * FROM articles LIMIT 5)": """SELECT 
-    title, 
-    hub, 
-    difficulty, 
-    article_type, 
-    created_at
-FROM articles
-LIMIT 5;"""
-    }
-
-    user_query = st.text_area(
-        "Редактор SQL-запроса:",
-        value=query_templates[preset_query],
-        height=140
-    )
-
-    if st.button("▶️ Выполнить SQL-запрос", type="primary"):
-        try:
-            sql_res = con.execute(user_query).df()
-            st.success(f"Запрос успешно выполнен! Строк возвращено: {len(sql_res)}")
-            st.dataframe(sql_res, use_container_width=True)
-        except Exception as e:
-            st.error(f"Ошибка в синтаксисе SQL: {e}")
-
-
-# ------------------------------------------
-# ВКЛАДКА 4: Экспорт в Data Lake (Parquet)
+# ВКЛАДКА 3: Экспорт в Data Lake (Parquet)
 # ------------------------------------------
 with tab_export:
     st.subheader("📦 Экспорт данных в аналитический формат Parquet")
