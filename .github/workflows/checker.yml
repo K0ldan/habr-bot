@@ -1,0 +1,74 @@
+name: Habr ELT & DevSecOps Pipeline
+
+on:
+  schedule:
+    # Запуск 4 раза в день со смещением от пиковой нагрузки (:17 минут вместо :00)
+    # (06:17, 10:17, 15:17, 19:17 UTC = 09:17, 13:17, 18:17, 22:17 по МСК)
+    - cron: '17 6,10,15,19 * * *'
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# DevSec: Принцип наименьших привилегий (Least Privilege)
+permissions:
+  contents: read
+
+jobs:
+  security-scan:
+    name: 🛡️ DevSecOps Security Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies & security tools
+        run: |
+          pip install -r requirements.txt
+          pip install bandit pip-audit
+
+      - name: 🔍 SAST Code Security Scan (Bandit)
+        run: |
+          bandit -r main.py dashboard.py -ll -ii
+
+      - name: 📦 Dependency Vulnerability Audit (pip-audit)
+        run: |
+          pip-audit --desc on
+
+  run-pipeline:
+    name: 🚀 Execute Habr Pipeline
+    needs: security-scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Pipeline
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: python main.py
