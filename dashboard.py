@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SENTRY_DSN = os.getenv("SENTRY_DSN")
+if not SENTRY_DSN and hasattr(st, "secrets") and "SENTRY_DSN" in st.secrets:
+    SENTRY_DSN = st.secrets["SENTRY_DSN"]
+
 if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
@@ -17,7 +20,12 @@ if SENTRY_DSN:
     )
 
 TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL")
+if not TURSO_DATABASE_URL and hasattr(st, "secrets") and "TURSO_DATABASE_URL" in st.secrets:
+    TURSO_DATABASE_URL = st.secrets["TURSO_DATABASE_URL"]
+
 TURSO_AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN")
+if not TURSO_AUTH_TOKEN and hasattr(st, "secrets") and "TURSO_AUTH_TOKEN" in st.secrets:
+    TURSO_AUTH_TOKEN = st.secrets["TURSO_AUTH_TOKEN"]
 
 # Настройка страницы
 st.set_page_config(
