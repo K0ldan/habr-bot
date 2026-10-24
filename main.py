@@ -7,7 +7,6 @@ import socket
 import sqlite3
 import sys
 import time
-import unicodedata
 from typing import List, Optional
 
 # DevSec: Глобальный таймаут на любые сетевые сокеты (защита от зависаний раннера)
@@ -432,8 +431,8 @@ def send_sunday_digest(db: Database, target_chat_ids: List[str]):
                 cleaned = str(t).strip()
                 if cleaned and len(cleaned) > 1:
                     tech_counter[cleaned] = tech_counter.get(cleaned, 0) + 1
-        except Exception:
-            continue
+        except (json.JSONDecodeError, TypeError, ValueError):
+            pass
 
     sorted_tech = sorted(tech_counter.items(), key=lambda x: x[1], reverse=True)[:3]
     medals = ["🥇", "🥈", "🥉"]
