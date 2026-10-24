@@ -43,7 +43,7 @@ jobs:
 
       - name: 📦 Dependency Vulnerability Audit (pip-audit)
         run: |
-          pip-audit --desc on
+          pip-audit -r requirements.txt --desc on
 
   run-pipeline:
     name: 🚀 Execute Habr Pipeline
