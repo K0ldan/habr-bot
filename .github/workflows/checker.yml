@@ -47,6 +47,7 @@ jobs:
 
   run-pipeline:
     name: 🚀 Execute Habr Pipeline
+    if: github.event_name != 'pull_request'
     needs: security-scan
     runs-on: ubuntu-latest
 
