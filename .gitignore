@@ -9,3 +9,9 @@ venv/
 
 .streamlit/
 secrets.toml
+
+# Logs & build/test artifacts
+*.log
+.pytest_cache/
+dist/
+build/
