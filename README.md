@@ -1,4 +1,4 @@
-# 🧠 Habr Data & ML Engineering Radar (with DevSecOps)
+# Habr Data & ML Engineering Radar (with DevSecOps)
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
@@ -9,73 +9,74 @@
 
 Автономная промышленная платформа и serverless ELT-пайплайн для непрерывного мониторинга, семантической фильтрации через LLM и аналитической агрегации технических публикаций с Хабра по ключевым направлениям: **Data Engineering**, **Machine Learning** и **Big Data**.
 
-Проект спроектирован по принципам современного стека данных (**Modern Data Stack**), разделения вычислений и хранения (**Separation of Compute & Storage**), а также всестороннего контура безопасности (**DevSecOps**) с пожизненной нулевой стоимостью инфраструктуры (**$0.00 TCO**).
+Проект спроектирован по принципам современного стека данных (**Modern Data Stack**), разделения вычислений и хранения (**Separation of Compute & Storage**), а также всестороннего контура безопасности (**DevSecOps**) с нулевой стоимостью инфраструктуры (**$0.00 TCO**).
 
 ---
 
-## 🏗 Архитектура системы (End-to-End Pipeline)
+## Архитектура системы (End-to-End Pipeline)
 
 ```mermaid
 flowchart TD
     subgraph Ingestion ["1. Data Ingestion & AI Curation"]
-        A["📡 Habr RSS Feeds\n(DE, ML, Big Data)"] --> B["⚙️ GitHub Actions Runner\n(Ubuntu Cloud VM)"]
-        B --> C["🤖 Groq LPU API\n(Qwen 27B Tech Lead)"]
+        A["Habr RSS Feeds\n(DE, ML, Big Data)"] --> B["GitHub Actions Runner\n(Ubuntu Cloud VM)"]
+        C["Groq LPU API\n(Qwen 27B Tech Lead)"]
+        B --> C
     end
 
     subgraph Security ["2. DevSecOps Security Gates"]
-        B --> S1["🛡️ Bandit SAST\n(AST Code Analysis)"]
-        B --> S2["📦 pip-audit SCA\n(PyPI CVE Vulnerabilities)"]
-        C --> S3["🔒 Prompt Injection Defense\n(XML Isolation Tags)"]
+        B --> S1["Bandit SAST\n(AST Code Analysis)"]
+        B --> S2["pip-audit SCA\n(PyPI CVE Vulnerabilities)"]
+        C --> S3["Prompt Injection Defense\n(XML Isolation Tags)"]
     end
 
     subgraph Contracts ["3. Data Contracts & Storage (DWH)"]
-        C --> D["📋 Pydantic v2 Validation\n(Tech, Difficulty, Prod Verdict)"]
-        D -->|HTTPS Hrana| E["☁️ Turso Cloud DWH\n(libSQL / AWS Stockholm)"]
-        E -.->|Local Fallback| E2["💾 SQLite (articles.db)"]
+        C --> D["Pydantic v2 Validation\n(Tech, Difficulty, Prod Verdict)"]
+        D -->|HTTPS Hrana| E["Turso Cloud DWH\n(libSQL / AWS Stockholm)"]
+        E -.->|Local Fallback| E2["SQLite (articles.db)"]
     end
 
     subgraph Serving ["4. Serving, Analytics & Delivery"]
-        D -->|Instant Alerts| F["📲 Telegram Bot\n(Inline Buttons & Badges)"]
-        E -->|Sunday Automation| F2["📊 Sunday Tech Digest\n(Weekly Trends & Best Article)"]
-        E -->|Vectorized OLAP| G["⚡ DuckDB In-Memory Engine"]
-        G --> H["🌐 Streamlit BI Dashboard\n(3 Tabs, Data Observability)"]
-        G --> I["📦 Data Lake Export\n(Apache Parquet & CSV)"]
+        D -->|Instant Alerts| F["Telegram Bot\n(Inline Buttons & Badges)"]
+        E -->|Sunday Automation| F2["Sunday Tech Digest\n(Weekly Trends & Best Article)"]
+        E -->|Vectorized OLAP| G["DuckDB In-Memory Engine"]
+        G --> H["Streamlit BI Dashboard\n(3 Tabs, Data Observability)"]
+        G --> I["Data Lake Export\n(Apache Parquet & CSV)"]
     end
 ```
 
 ---
 
-## ⚡ Ключевые возможности платформы
+## Ключевые возможности платформы
 
-### 🤖 1. AI-Техлид и семантическая фильтрация (Groq LPU)
+### 1. AI-фильтрация и ранжирование (Groq LPU)
 * **Анти-кликбейт и фильтрация «воды»:** нейросеть `qwen/qwen3.8-27b` отбирает **максимум по 1 лучшей практической публикации** из каждого хаба за один запуск.
 * **Строгий контракт данных (Data Contract):** извлечение метаданных валидируется через **Pydantic v2**:
   * Оценка грейда сложности: `Junior`, `Middle`, `Senior`, `Lead`.
   * Тип публикации: `Архитектура`, `Кейс`, `Гайд`, `Обзор`, `Анализ`.
   * Примерное время чтения (`read_time`): например, `~6 мин`.
-  * Индекс применимости к продакшену (`prod_verdict`): `🟢 Готово к проду`, `🟡 Эксперимент`, `🔴 Только пет-проект`.
+  * Индекс применимости к продакшену (`prod_verdict`): `Готово к проду`, `Эксперимент`, `Только пет-проект`.
   * Список извлечённых сущностей стека (`tech_stack`).
 
-### 📲 2. Telegram Delivery с Inline-кнопками и Воскресным дайджестом
+### 2. Telegram Delivery с Inline-кнопками и аналитическим дайджестом
 * **Интерактивные кнопки (Inline Keyboards):** быстрое открытие оригиналов статей прямо под постом в один клик.
 * **Мульти-рассылка:** поддержка списка получателей через запятую (`TELEGRAM_CHAT_ID`).
 * **Воскресный аналитический дайджест (Sunday Digest):** каждое воскресенье бот автоматически выгружает срез за неделю и рассылает:
-  * 🥇🥈🥉 Топ-3 технологии недели по данным DWH.
-  * 🏆 Архитектурную статью недели с ключевым инсайтом.
+  * Топ-3 технологии недели по данным DWH.
+  * Архитектурную статью недели с ключевым инсайтом.
   * Идемпотентность гарантируется отдельной таблицей `digests` в базе данных.
 
-### 📊 3. Аналитический веб-дашборд (Streamlit + DuckDB)
-* **In-Memory OLAP:** агрегации по 80+ статьям и тысячам тегов рассчитываются за доли миллисекунд движком **DuckDB** с использованием функции `unnest()`.
+### 3. Аналитический веб-дашборд (Streamlit + DuckDB)
+* **In-Memory OLAP:** агрегации по статьям и тегам рассчитываются за доли миллисекунд движком **DuckDB** с использованием функции `unnest()`.
 * **Data Observability & Качество данных (Data Quality):**
-  * ⏱ **Data Freshness (SLA):** таймер свежести данных с момента последней записи в DWH.
-  * 🧩 **Tech Stack Completeness:** процент полноты разметки технологий.
-  * 📝 **Contract Completeness:** процент валидации выжимок.
-  * 🔒 **Primary Key Integrity:** 100% уникальность ссылок без дубликатов.
+  * **Data Freshness (SLA):** таймер свежести данных с момента последней записи в DWH.
+  * **Tech Stack Completeness:** процент полноты разметки технологий.
+  * **Contract Completeness:** процент валидации выжимок.
+  * **Primary Key Integrity:** 100% уникальность ссылок без дубликатов.
 * **Data Lake Export:** генерация сжатого бинарного файла **Apache Parquet** (`pyarrow`) и CSV на лету.
 
 ---
 
-## 🛡 Контур безопасности (DevSecOps)
+## Контур безопасности (DevSecOps)
 
 В проекте реализован многоуровневый контур безопасности корпоративного класса:
 
@@ -95,7 +96,7 @@ flowchart TD
 
 ---
 
-## 🚀 Локальный запуск
+## Локальный запуск
 
 1. **Клонируйте репозиторий:**
    ```bash
@@ -126,6 +127,6 @@ flowchart TD
 
 ---
 
-## 📄 Лицензия
+## Лицензия
 Проект распространяется под открытой лицензией [MIT](LICENSE).
 Автор: [@K0ldan](https://github.com/K0ldan)
