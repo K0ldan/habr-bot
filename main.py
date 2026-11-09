@@ -346,6 +346,23 @@ def extract_structured_data(title: str, description: str) -> EnrichedArticle:
 # ==========================================
 # 4. Telegram Delivery & UI Components
 # ==========================================
+ALLOWED_TG_TAGS = ("b", "strong", "i", "em", "u", "ins", "s", "strike", "del", "code", "pre", "blockquote")
+
+def sanitize_telegram_html(text: str) -> str:
+    """Экранирует весь HTML, кроме whitelisted тегов форматирования Telegram.
+
+    LLM размечает summary тегами <b>/<i> — сохраняем их, но обезвреживаем
+    ссылки, картинки, скрипты и любые атрибуты (защита от prompt injection).
+    """
+    escaped = html.escape(text or "")
+    return re.sub(
+        r"&lt;(/?)(" + "|".join(ALLOWED_TG_TAGS) + r")&gt;",
+        r"<\1\2>",
+        escaped,
+        flags=re.IGNORECASE,
+    )
+
+
 def send_telegram(chat_id: str, title: str, url: str, enriched: EnrichedArticle):
     """Отправка статьи с цветными бейджами, хэштегами и интерактивной кнопкой"""
     hashtags = " ".join([f"#{re.sub(r'[^a-zA-Zа-яА-Я0-9_]', '', t)}" for t in enriched.tech_stack[:5] if t])
@@ -362,7 +379,7 @@ def send_telegram(chat_id: str, title: str, url: str, enriched: EnrichedArticle)
     safe_title = html.escape(title)
     # URL из RSS: пропускаем только http(s), экранируем кавычки против выхода из атрибута
     safe_url = html.escape(url, quote=True) if url.startswith(("http://", "https://")) else "https://habr.com"
-    safe_summary = html.escape(enriched.summary)
+    safe_summary = sanitize_telegram_html(enriched.summary)
     safe_article_type = html.escape(enriched.article_type)
     safe_read_time = html.escape(enriched.read_time)
     safe_prod_verdict = html.escape(enriched.prod_verdict)
@@ -462,7 +479,7 @@ def send_sunday_digest(db: Database, target_chat_ids: List[str]):
     top_url = html.escape(top_article[0], quote=True) if top_article[0].startswith(("http://", "https://")) else "https://habr.com"
     top_diff = html.escape(top_article[3] or "Middle")
     top_type = html.escape(top_article[4] or "Кейс")
-    top_summary = html.escape(top_article[6] or "")
+    top_summary = sanitize_telegram_html(top_article[6] or "")
 
     digest_text = (
         f"📊 <b>НЕДЕЛЬНЫЙ ДАЙДЖЕСТ ТЕХНОЛОГИЙ</b>\n"
