@@ -1,6 +1,7 @@
 import io
 import json
 import os
+import html
 import duckdb
 import pandas as pd
 import sentry_sdk
@@ -509,38 +510,45 @@ with tab_feed:
                 else ("pill-middle" if diff == "Middle" else "pill-junior")
             )
             hub_pill_class = "pill-ml" if row["hub"] == "Machine Learning" else ("pill-bd" if row["hub"] == "Big Data" else "pill-de")
+            # XSS-защита: все данные из БД экранируем перед вставкой в HTML
+            safe_hub = html.escape(str(row["hub"]))
+            safe_diff = html.escape(str(diff))
+            safe_type = html.escape(str(row["article_type"]))
+            safe_summary = html.escape(str(row["summary"]))
+            safe_title = str(row["title"]).replace("[", "(").replace("]", ")")
+            safe_url = str(row["url"]) if str(row["url"]).startswith(("http://", "https://")) else "#"
 
             with st.container(border=True):
                 is_ai = row.get("is_ai_pick", False)
                 if is_ai:
                     badge_header = (
                         f'<span class="pill" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; border: 1px solid #f59e0b;">⭐ ВЫБОР AI</span>'
-                        f'<span class="pill {hub_pill_class}">{row["hub"]}</span>'
-                        f'<span class="pill {diff_pill_class}">{diff}</span>'
-                        f'<span class="pill pill-format">Формат: {row["article_type"]}</span>'
+                        f'<span class="pill {hub_pill_class}">{safe_hub}</span>'
+                        f'<span class="pill {diff_pill_class}">{safe_diff}</span>'
+                        f'<span class="pill pill-format">Формат: {safe_type}</span>'
                     )
                     content_box = (
                         f'<div class="ai-summary-box">'
-                        f'{row["summary"]}'
+                        f'{safe_summary}'
                         f'</div>'
                     )
                 else:
                     badge_header = (
                         f'<span class="pill" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">📰 ХАБР</span>'
-                        f'<span class="pill {hub_pill_class}">{row["hub"]}</span>'
+                        f'<span class="pill {hub_pill_class}">{safe_hub}</span>'
                     )
                     content_box = (
                         f'<div style="background: #f8fafc; border-left: 3px solid #94a3b8; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0; font-size: 14px; line-height: 1.5; color: #334155;">'
-                        f'<b>📄 Аннотация:</b><br>{row["summary"]}'
+                        f'<b>📄 Аннотация:</b><br>{safe_summary}'
                         f'</div>'
                     )
 
                 st.markdown(f'<div style="margin-bottom: 6px;">{badge_header}</div>', unsafe_allow_html=True)
-                st.markdown(f"#### [{row['title']}]({row['url']})")
+                st.markdown(f"#### [{safe_title}]({safe_url})")
                 st.markdown(content_box, unsafe_allow_html=True)
 
                 if row["tech_list"]:
-                    tags_html = "".join([f'<span class="tech-tag">#{t}</span>' for t in row["tech_list"]])
+                    tags_html = "".join([f'<span class="tech-tag">#{html.escape(str(t))}</span>' for t in row["tech_list"]])
                     st.markdown(
                         f'<div style="margin: 8px 0 12px 0;">'
                         f'<span style="font-size: 12px; font-weight: 600; color: #64748b; margin-right: 6px;">Стек:</span>{tags_html}'

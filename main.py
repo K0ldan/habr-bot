@@ -336,7 +336,7 @@ def extract_structured_data(title: str, description: str) -> EnrichedArticle:
     except Exception as e:
         print(f"Ошибка валидации/парсинга JSON: {e}")
         return EnrichedArticle(
-            summary=f"🎯 <b>Статья:</b> {html.escape(safe_title[:100])}",
+            summary=f"🎯 Статья: {safe_title[:100]}",
             tech_stack=[],
             difficulty="Middle",
             article_type="Статья"
@@ -357,15 +357,21 @@ def send_telegram(chat_id: str, title: str, url: str, enriched: EnrichedArticle)
         "Middle": "🟡 Middle",
         "Senior": "🔴 Senior",
         "Lead": "🟣 Lead"
-    }.get(enriched.difficulty, f"⚪ {enriched.difficulty}")
+    }.get(enriched.difficulty, f"⚪ {html.escape(enriched.difficulty)}")
 
     safe_title = html.escape(title)
+    # URL из RSS: пропускаем только http(s), экранируем кавычки против выхода из атрибута
+    safe_url = html.escape(url, quote=True) if url.startswith(("http://", "https://")) else "https://habr.com"
+    safe_summary = html.escape(enriched.summary)
+    safe_article_type = html.escape(enriched.article_type)
+    safe_read_time = html.escape(enriched.read_time)
+    safe_prod_verdict = html.escape(enriched.prod_verdict)
 
     message_text = (
-        f"🔥 <b>Новая статья:</b> <a href='{url}'>{safe_title}</a>\n\n"
-        f"🏷 <b>Уровень:</b> <code>{difficulty_badge}</code> | 📑 <b>Тип:</b> <code>{enriched.article_type}</code>\n"
-        f"⏱ <b>Чтение:</b> <code>{enriched.read_time}</code> | 🎯 <b>Прод:</b> <code>{enriched.prod_verdict}</code>\n\n"
-        f"{enriched.summary}\n\n"
+        f"🔥 <b>Новая статья:</b> <a href='{safe_url}'>{safe_title}</a>\n\n"
+        f"🏷 <b>Уровень:</b> <code>{difficulty_badge}</code> | 📑 <b>Тип:</b> <code>{safe_article_type}</code>\n"
+        f"⏱ <b>Чтение:</b> <code>{safe_read_time}</code> | 🎯 <b>Прод:</b> <code>{safe_prod_verdict}</code>\n\n"
+        f"{safe_summary}\n\n"
         f"🛠 <b>Стек:</b> {hashtags}"
     )
 
@@ -453,10 +459,10 @@ def send_sunday_digest(db: Database, target_chat_ids: List[str]):
         top_article = articles[0]
 
     top_title = html.escape(top_article[1])
-    top_url = top_article[0]
-    top_diff = top_article[3] or "Middle"
-    top_type = top_article[4] or "Кейс"
-    top_summary = top_article[6] or ""
+    top_url = html.escape(top_article[0], quote=True) if top_article[0].startswith(("http://", "https://")) else "https://habr.com"
+    top_diff = html.escape(top_article[3] or "Middle")
+    top_type = html.escape(top_article[4] or "Кейс")
+    top_summary = html.escape(top_article[6] or "")
 
     digest_text = (
         f"📊 <b>НЕДЕЛЬНЫЙ ДАЙДЖЕСТ ТЕХНОЛОГИЙ</b>\n"
