@@ -1,4 +1,4 @@
-# Habr Data & ML Engineering Radar (with DevSecOps)
+# Habr Data & ML Engineering Radar
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
@@ -7,9 +7,7 @@
 [![OLAP: DuckDB](https://img.shields.io/badge/OLAP-DuckDB%20Fast-yellow.svg)](https://duckdb.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Автономная промышленная платформа и serverless ELT-пайплайн для непрерывного мониторинга, семантической фильтрации через LLM и аналитической агрегации технических публикаций с Хабра по ключевым направлениям: **Data Engineering**, **Machine Learning** и **Big Data**.
-
-Проект спроектирован по принципам современного стека данных (**Modern Data Stack**), разделения вычислений и хранения (**Separation of Compute & Storage**), а также всестороннего контура безопасности (**DevSecOps**) с нулевой стоимостью инфраструктуры (**$0.00 TCO**).
+ELT-пайплайн на GitHub Actions для мониторинга технических публикаций с Хабра по направлениям **Data Engineering**, **Machine Learning** и **Big Data**: фильтрация и структурирование статей через LLM, хранение в Turso, рассылка в Telegram и аналитический дашборд на Streamlit.
 
 ---
 
@@ -78,7 +76,7 @@ flowchart TD
 
 ## Контур безопасности (DevSecOps)
 
-В проекте реализован многоуровневый контур безопасности корпоративного класса:
+В проекте реализованы следующие меры безопасности:
 
 1. **Защита от Prompt Injection (OWASP LLM Top 10):**
    * Весь входящий контент статей изолирован в XML-теги `<article_content>` с явной системной директивой игнорирования любых внутренних мета-инструкций.
